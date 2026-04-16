@@ -1,28 +1,54 @@
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRocket, faCog, faChartLine, faDatabase, faSearch, faCube, faArrowRight, faCheck } from '@fortawesome/free-solid-svg-icons';
-import { getSystems, getConfig, System } from '../services/api';
+import { getSystems, getConfig, getRoles, System, Role } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
 
 function Home() {
+  const { user } = useAuth();
   const [systems, setSystems] = useState<System[]>([]);
   const [systemName, setSystemName] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getSystems(), getConfig()])
-      .then(([systemsData, configData]) => {
-        setSystems(Array.isArray(systemsData) ? systemsData.filter((s: System) => s.enabled) : []);
-        setSystemName(configData?.systemName || '天机智信 运营管理系统');
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Failed to load data:', err);
-        setSystems([]);
-        setSystemName('天机智信 运营管理系统');
-        setLoading(false);
-      });
-  }, []);
+    loadData();
+  }, [user]);
+
+  const loadData = async () => {
+    try {
+      const [systemsData, configData, rolesData] = await Promise.all([
+        getSystems(),
+        getConfig(),
+        getRoles()
+      ]);
+
+      const allSystems = Array.isArray(systemsData) ? systemsData : [];
+
+      // Filter systems based on user role
+      if (user && user.role !== 'admin') {
+        const userRole = rolesData.find((r: Role) => r.id === user.roleId);
+        if (userRole) {
+          const accessibleSystems = allSystems.filter((s: System) =>
+            userRole.systemIds.includes(s.id) && s.enabled
+          );
+          setSystems(accessibleSystems);
+        } else {
+          setSystems([]);
+        }
+      } else {
+        // Admin can see all enabled systems
+        setSystems(allSystems.filter((s: System) => s.enabled));
+      }
+
+      setSystemName(configData?.systemName || '天机智信 运营管理系统');
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setSystems([]);
+      setSystemName('天机智信 运营管理系统');
+    }
+    setLoading(false);
+  };
 
   const getSystemIcon = (name: string) => {
     if (name.includes('产品')) return faCube;
@@ -84,16 +110,16 @@ function Home() {
               <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <FontAwesomeIcon icon={faCog} className="text-slate-400 text-2xl" />
               </div>
-              <p className="text-slate-700 text-lg">暂无启用的子系统</p>
-              <p className="text-slate-500 text-sm mt-2">请在配置管理中添加并启用子系统</p>
+              <p className="text-slate-700 text-lg">暂无访问权限的子系统</p>
+              <p className="text-slate-500 text-sm mt-2">请联系管理员分配系统访问权限</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {systems.map((system, index) => (
+              {systems.map((system) => (
                 <div
                   key={system.id}
                   className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-lg transition-all duration-300"
-                  onClick={() => system.enabled && (window.location.href = system.url)}
+                  onClick={() => window.location.href = system.url}
                 >
                   <div className="relative h-40 overflow-hidden">
                     <img

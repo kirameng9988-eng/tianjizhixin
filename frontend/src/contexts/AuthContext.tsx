@@ -1,27 +1,27 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getUsers } from '../services/api';
 
 interface User {
+  id: string;
   username: string;
   role: 'admin' | 'user';
+  roleId: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => boolean;
+  loading: boolean;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ACCOUNTS: Record<string, { password: string; role: 'admin' | 'user' }> = {
-  'admin': { password: 'admin123', role: 'admin' },
-  'user': { password: 'user123', role: 'user' },
-};
-
 const STORAGE_KEY = 'auth_user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -32,17 +32,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
+    setLoading(false);
   }, []);
 
-  const login = (username: string, password: string): boolean => {
-    const account = ACCOUNTS[username];
-    if (account && account.password === password) {
-      const userData: User = { username, role: account.role };
-      setUser(userData);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-      return true;
+  const login = async (username: string, password: string): Promise<boolean> => {
+    try {
+      const users = await getUsers();
+      const account = users.find((u: any) => u.username === username && u.password === password);
+      if (account) {
+        const role = account.roleId === 'admin' ? 'admin' : 'user';
+        const userData: User = {
+          id: account.id,
+          username: account.username,
+          role,
+          roleId: account.roleId
+        };
+        setUser(userData);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
@@ -51,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

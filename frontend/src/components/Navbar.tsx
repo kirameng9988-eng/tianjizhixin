@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faSignOutAlt, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../assets/Vector.svg';
 
@@ -11,10 +12,16 @@ interface NavbarProps {
 export default function Navbar({ systemName = '运营管理系统' }: NavbarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = () => {
+    setDropdownOpen(false);
     logout();
     navigate('/login');
+  };
+
+  const getInitial = (name: string) => {
+    return name.charAt(0).toUpperCase();
   };
 
   return (
@@ -34,26 +41,36 @@ export default function Navbar({ systemName = '运营管理系统' }: NavbarProp
         </div>
         <div className="flex items-center gap-4">
           {user ? (
-            <>
-              <div className="flex items-center gap-2 text-white/80">
-                <FontAwesomeIcon icon={faUser} className="text-sm" />
-                <span className="font-medium">{user.username}</span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  user.role === 'admin'
-                    ? 'bg-blue-500/30 text-blue-300'
-                    : 'bg-slate-500/30 text-slate-300'
-                }`}>
-                  {user.role === 'admin' ? '管理员' : '用户'}
-                </span>
-              </div>
+            <div className="relative">
               <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white/80 hover:text-white transition-all text-sm"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
               >
-                <FontAwesomeIcon icon={faSignOutAlt} className="text-sm" />
-                退出
+                <div className="w-8 h-8 rounded-full bg-[#0A61FF] flex items-center justify-center">
+                  <span className="text-white text-sm font-semibold">{getInitial(user.username)}</span>
+                </div>
+                <span className="text-white font-medium">{user.username}</span>
+                <FontAwesomeIcon icon={faChevronDown} className="text-white/60 text-xs" />
               </button>
-            </>
+
+              {dropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setDropdownOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-40 bg-[#1a1f2e] border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-white/80 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                    >
+                      <FontAwesomeIcon icon={faSignOutAlt} className="text-sm" />
+                      退出登录
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           ) : (
             <Link
               to="/login"
