@@ -25,6 +25,14 @@
       "description": "找数寻源运营管理",
       "url": "https://idas.example.com/redirect/search",
       "enabled": true
+    },
+    {
+      "id": "1776323876818",
+      "name": "数据寻源",
+      "logo": "",
+      "description": "数据寻源",
+      "url": "http://localhost:5173/config",
+      "enabled": true
     }
   ]
 }
