@@ -58,10 +58,6 @@ function Home() {
 
       <section className="pt-16 pb-12 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-blue-600 text-sm font-medium mb-6">
-            <FontAwesomeIcon icon={faCheck} className="text-xs" />
-            系统运行正常
-          </div>
           <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4 tracking-tight">
             欢迎使用 <span className="text-blue-500">运营管理平台</span>
           </h2>
