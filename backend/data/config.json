@@ -1,0 +1,30 @@
+{
+  "systemName": "天机智信 运营管理系统",
+  "logo": "/assets/logo.png",
+  "systems": [
+    {
+      "id": "1",
+      "name": "自营数据产品系统",
+      "logo": "/assets/icon-product.png",
+      "description": "管理自营数据产品",
+      "url": "https://idas.example.com/redirect/product",
+      "enabled": true
+    },
+    {
+      "id": "2",
+      "name": "自营数据服务系统",
+      "logo": "/assets/icon-service.png",
+      "description": "管理自营数据服务",
+      "url": "https://idas.example.com/redirect/service",
+      "enabled": true
+    },
+    {
+      "id": "3",
+      "name": "找数寻源运营后台",
+      "logo": "/assets/icon-search.png",
+      "description": "找数寻源运营管理",
+      "url": "https://idas.example.com/redirect/search",
+      "enabled": true
+    }
+  ]
+}
