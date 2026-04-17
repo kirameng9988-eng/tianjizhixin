@@ -1,38 +1,58 @@
 {
-  "systemName": "天机智信 运营管理系统",
+  "systemName": "运营管理系统",
   "logo": "/assets/logo.png",
   "systems": [
     {
       "id": "1",
       "name": "自营数据产品系统",
-      "logo": "/assets/icon-product.png",
+      "type": "external",
+      "sort": 0,
+      "area": "government",
+      "category": "data_product",
+      "urlGov": "https://idas.example.com/redirect/product",
+      "urlInternet": "",
       "description": "管理自营数据产品",
-      "url": "https://idas.example.com/redirect/product",
-      "enabled": true
+      "enabled": true,
+      "logo": "/assets/icon-product.png"
     },
     {
       "id": "2",
       "name": "自营数据服务系统",
-      "logo": "/assets/icon-service.png",
+      "type": "internal",
+      "sort": 1,
+      "area": "government",
+      "category": "data_service",
+      "urlGov": "https://idas.example.com/redirect/service",
+      "urlInternet": "",
       "description": "管理自营数据服务",
-      "url": "https://idas.example.com/redirect/service",
-      "enabled": true
+      "enabled": true,
+      "logo": "/assets/icon-service.png"
     },
     {
       "id": "3",
       "name": "找数寻源运营后台",
-      "logo": "/assets/icon-search.png",
+      "type": "external",
+      "sort": 2,
+      "area": "government",
+      "category": "search",
+      "urlGov": "https://idas.example.com/redirect/search",
+      "urlInternet": "",
       "description": "找数寻源运营管理",
-      "url": "https://idas.example.com/redirect/search",
-      "enabled": true
+      "enabled": true,
+      "logo": "/assets/icon-search.png"
     },
     {
       "id": "1776323876818",
       "name": "数据寻源",
-      "logo": "",
+      "type": "external",
+      "sort": 3,
+      "area": "internet",
+      "category": "search",
+      "urlGov": "",
+      "urlInternet": "http://localhost:5173/config",
       "description": "数据寻源",
-      "url": "http://localhost:5173/config",
-      "enabled": true
+      "enabled": true,
+      "logo": ""
     }
   ]
 }

@@ -44,13 +44,33 @@ export async function deleteSystem(id: string) {
   return res.json();
 }
 
+// Tool types
+export type SystemType = 'internal' | 'external';
+
+// Area types
+export type SystemArea = 'government' | 'internet';
+
+// Tool categories
+export const SYSTEM_CATEGORIES = [
+  { value: 'data_product', label: '数据产品' },
+  { value: 'data_service', label: '数据服务' },
+  { value: 'search', label: '数据寻源' },
+  { value: 'operation', label: '运营管理' },
+  { value: 'other', label: '其他' },
+] as const;
+
 export interface System {
   id: string;
   name: string;
-  logo: string;
+  type: SystemType;
+  sort: number;
+  area: SystemArea;
+  category: string;
+  urlGov: string;
+  urlInternet: string;
   description: string;
-  url: string;
   enabled: boolean;
+  logo?: string;
 }
 
 // User Management

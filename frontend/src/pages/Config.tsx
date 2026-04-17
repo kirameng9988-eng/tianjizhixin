@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faCog, faImage, faUsers, faUserShield, faSave, faPlus, faEdit, faTrash, faCheck, faToggleOn, faToggleOff, faExternalLinkAlt
+  faCog, faImage, faUsers, faUserShield, faSave, faPlus, faEdit, faTrash, faCheck, faToggleOn, faToggleOff, faExternalLinkAlt, faEye, faTimes
 } from '@fortawesome/free-solid-svg-icons';
-import { getConfig, updateConfig, getSystems, addSystem, updateSystem, deleteSystem, getUsers, getRoles, addUser, updateUser, deleteUser, addRole, updateRole, deleteRole, System, User, Role } from '../services/api';
+import { getConfig, updateConfig, getSystems, addSystem, updateSystem, deleteSystem, getUsers, getRoles, addUser, updateUser, deleteUser, addRole, updateRole, deleteRole, System, User, Role, SYSTEM_CATEGORIES, SystemType, SystemArea } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
 
@@ -23,7 +23,20 @@ export default function Config() {
   // System form state
   const [showSystemForm, setShowSystemForm] = useState(false);
   const [editingSystem, setEditingSystem] = useState<System | null>(null);
-  const [systemForm, setSystemForm] = useState({ name: '', description: '', url: '', logo: '', enabled: true });
+  const [systemForm, setSystemForm] = useState({
+    name: '',
+    type: 'external' as SystemType,
+    sort: 0,
+    area: 'government' as SystemArea,
+    category: 'other',
+    urlGov: '',
+    urlInternet: '',
+    description: '',
+    logo: '',
+    enabled: true
+  });
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailSystem, setDetailSystem] = useState<System | null>(null);
 
   // User form state
   const [showUserForm, setShowUserForm] = useState(false);
@@ -63,7 +76,18 @@ export default function Config() {
   // System handlers
   const handleAddSystem = () => {
     setEditingSystem(null);
-    setSystemForm({ name: '', description: '', url: '', logo: '', enabled: true });
+    setSystemForm({
+      name: '',
+      type: 'external',
+      sort: systems.length,
+      area: 'government',
+      category: 'other',
+      urlGov: '',
+      urlInternet: '',
+      description: '',
+      logo: '',
+      enabled: true
+    });
     setShowSystemForm(true);
   };
 
@@ -71,12 +95,22 @@ export default function Config() {
     setEditingSystem(system);
     setSystemForm({
       name: system.name,
+      type: system.type,
+      sort: system.sort,
+      area: system.area,
+      category: system.category,
+      urlGov: system.urlGov,
+      urlInternet: system.urlInternet,
       description: system.description,
-      url: system.url,
-      logo: system.logo,
+      logo: system.logo || '',
       enabled: system.enabled
     });
     setShowSystemForm(true);
+  };
+
+  const handleViewSystem = (system: System) => {
+    setDetailSystem(system);
+    setShowDetailModal(true);
   };
 
   const handleSaveSystem = async () => {
@@ -241,17 +275,93 @@ export default function Config() {
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">系统名称</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">工具名称</label>
                       <input
                         type="text"
                         value={systemForm.name}
                         onChange={e => setSystemForm({ ...systemForm, name: e.target.value })}
                         className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
-                        placeholder="输入系统名称"
+                        placeholder="输入工具名称"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">系统Logo URL</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">工具类型</label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSystemForm({ ...systemForm, type: 'internal' })}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-all ${
+                            systemForm.type === 'internal'
+                              ? 'bg-blue-50 border-blue-200 text-blue-600'
+                              : 'bg-slate-50 border-slate-200 text-slate-400'
+                          }`}
+                        >
+                          内部工具
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSystemForm({ ...systemForm, type: 'external' })}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-all ${
+                            systemForm.type === 'external'
+                              ? 'bg-blue-50 border-blue-200 text-blue-600'
+                              : 'bg-slate-50 border-slate-200 text-slate-400'
+                          }`}
+                        >
+                          外部工具
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">排序</label>
+                      <input
+                        type="number"
+                        value={systemForm.sort}
+                        onChange={e => setSystemForm({ ...systemForm, sort: parseInt(e.target.value) || 0 })}
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                        placeholder="数字越小越靠前"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">所属区域</label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSystemForm({ ...systemForm, area: 'government' })}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-all ${
+                            systemForm.area === 'government'
+                              ? 'bg-blue-50 border-blue-200 text-blue-600'
+                              : 'bg-slate-50 border-slate-200 text-slate-400'
+                          }`}
+                        >
+                          政务网
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSystemForm({ ...systemForm, area: 'internet' })}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-all ${
+                            systemForm.area === 'internet'
+                              ? 'bg-blue-50 border-blue-200 text-blue-600'
+                              : 'bg-slate-50 border-slate-200 text-slate-400'
+                          }`}
+                        >
+                          互联网
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">工具分类</label>
+                      <select
+                        value={systemForm.category}
+                        onChange={e => setSystemForm({ ...systemForm, category: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                      >
+                        {SYSTEM_CATEGORIES.map(cat => (
+                          <option key={cat.value} value={cat.value}>{cat.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">工具Logo URL</label>
                       <input
                         type="text"
                         value={systemForm.logo}
@@ -261,29 +371,40 @@ export default function Config() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">系统描述</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">政务网链接</label>
                       <input
                         type="text"
-                        value={systemForm.description}
-                        onChange={e => setSystemForm({ ...systemForm, description: e.target.value })}
+                        value={systemForm.urlGov}
+                        onChange={e => setSystemForm({ ...systemForm, urlGov: e.target.value })}
                         className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
-                        placeholder="输入系统描述"
-                      />
-                    </div>
-                    <div className="md:col-span-2 lg:col-span-3">
-                      <label className="block text-sm font-medium text-slate-700 mb-2">访问URL</label>
-                      <input
-                        type="text"
-                        value={systemForm.url}
-                        onChange={e => setSystemForm({ ...systemForm, url: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
-                        placeholder="输入访问URL"
+                        placeholder="输入政务网链接"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">启用状态</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">互联网链接</label>
+                      <input
+                        type="text"
+                        value={systemForm.urlInternet}
+                        onChange={e => setSystemForm({ ...systemForm, urlInternet: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                        placeholder="输入互联网链接"
+                      />
+                    </div>
+                    <div className="md:col-span-2 lg:col-span-3">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">工具描述</label>
+                      <textarea
+                        value={systemForm.description}
+                        onChange={e => setSystemForm({ ...systemForm, description: e.target.value })}
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                        placeholder="输入工具描述"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">状态启停</label>
                       <div className="flex items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => setSystemForm({ ...systemForm, enabled: true })}
                           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-all ${
                             systemForm.enabled
@@ -295,6 +416,7 @@ export default function Config() {
                           启用
                         </button>
                         <button
+                          type="button"
                           onClick={() => setSystemForm({ ...systemForm, enabled: false })}
                           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-all ${
                             !systemForm.enabled
@@ -328,29 +450,49 @@ export default function Config() {
                 <table className="w-full min-w-[800px]">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">系统名称</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">描述</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">访问URL</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">排序</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">工具名称</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">工具类型</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">所属区域</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">工具分类</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">状态</th>
                       <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {systems.map((system) => (
+                    {systems
+                      .slice()
+                      .sort((a, b) => a.sort - b.sort)
+                      .map((system) => (
                       <tr key={system.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3">
+                          <span className="text-slate-400 text-sm">{system.sort}</span>
+                        </td>
                         <td className="px-4 py-3">
                           <span className="text-slate-800 font-medium">{system.name}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-slate-500 text-sm">{system.description}</span>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            system.type === 'internal'
+                              ? 'bg-purple-50 text-purple-600 border border-purple-100'
+                              : 'bg-blue-50 text-blue-600 border border-blue-100'
+                          }`}>
+                            {system.type === 'internal' ? '内部工具' : '外部工具'}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2 max-w-xs">
-                            <span className="text-slate-400 text-xs truncate">{system.url}</span>
-                            <a href={system.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 flex-shrink-0">
-                              <FontAwesomeIcon icon={faExternalLinkAlt} className="text-xs" />
-                            </a>
-                          </div>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            system.area === 'government'
+                              ? 'bg-amber-50 text-amber-600 border border-amber-100'
+                              : 'bg-cyan-50 text-cyan-600 border border-cyan-100'
+                          }`}>
+                            {system.area === 'government' ? '政务网' : '互联网'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-slate-600 text-sm">
+                            {SYSTEM_CATEGORIES.find(c => c.value === system.category)?.label || system.category}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -364,6 +506,13 @@ export default function Config() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleViewSystem(system)}
+                              className="p-2 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 transition-all"
+                              title="查看详情"
+                            >
+                              <FontAwesomeIcon icon={faEye} className="text-sm" />
+                            </button>
                             <button
                               onClick={() => handleToggleSystem(system)}
                               className={`p-2 rounded-lg transition-all ${
@@ -670,6 +819,84 @@ export default function Config() {
           )}
         </main>
       </div>
+
+      {/* Detail Modal */}
+      {showDetailModal && detailSystem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowDetailModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-800">工具详情</h3>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              >
+                <FontAwesomeIcon icon={faTimes} className="text-sm" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">工具名称</label>
+                  <p className="text-slate-800">{detailSystem.name}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">工具类型</label>
+                  <p className="text-slate-800">{detailSystem.type === 'internal' ? '内部工具' : '外部工具'}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">所属区域</label>
+                  <p className="text-slate-800">{detailSystem.area === 'government' ? '政务网' : '互联网'}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">工具分类</label>
+                  <p className="text-slate-800">{SYSTEM_CATEGORIES.find(c => c.value === detailSystem.category)?.label || detailSystem.category}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">排序</label>
+                  <p className="text-slate-800">{detailSystem.sort}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">状态</label>
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                    detailSystem.enabled
+                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                      : 'bg-slate-100 text-slate-500 border border-slate-200'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${detailSystem.enabled ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                    {detailSystem.enabled ? '启用' : '禁用'}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">政务网链接</label>
+                <p className="text-slate-800 text-sm break-all">{detailSystem.urlGov || '-'}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">互联网链接</label>
+                <p className="text-slate-800 text-sm break-all">{detailSystem.urlInternet || '-'}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">工具描述</label>
+                <p className="text-slate-800 text-sm">{detailSystem.description || '-'}</p>
+              </div>
+              {detailSystem.logo && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Logo</label>
+                  <p className="text-slate-800 text-sm break-all">{detailSystem.logo}</p>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="px-4 py-2 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-all text-sm"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Config from './pages/Config';
 import Login from './pages/Login';
+import ServiceConsole from './pages/ServiceConsole';
+import TechServiceList from './pages/tech/TechServiceList';
+import ResourceManagementList from './pages/tech/ResourceManagementList';
 
 function App() {
   return (
@@ -27,6 +30,18 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/service-console"
+            element={
+              <ProtectedRoute>
+                <ServiceConsole />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<TechServiceList />} />
+            <Route path="tech-service" element={<TechServiceList />} />
+            <Route path="resource-management" element={<ResourceManagementList />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </BrowserRouter>

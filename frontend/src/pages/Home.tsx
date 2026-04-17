@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRocket, faCog, faChartLine, faDatabase, faSearch, faCube, faArrowRight, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { getSystems, getConfig, getRoles, System, Role } from '../services/api';
@@ -7,6 +8,7 @@ import Navbar from '../components/Navbar';
 
 function Home() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [systems, setSystems] = useState<System[]>([]);
   const [systemName, setSystemName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ function Home() {
     } catch (err) {
       console.error('Failed to load data:', err);
       setSystems([]);
-      setSystemName('天机智信 运营管理系统');
+      setSystemName('运营管理系统');
     }
     setLoading(false);
   };
@@ -119,7 +121,16 @@ function Home() {
                 <div
                   key={system.id}
                   className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-lg transition-all duration-300"
-                  onClick={() => window.location.href = system.url}
+                  onClick={() => {
+                    if (system.type === 'internal') {
+                      navigate('/service-console', { state: { systemName: system.name } });
+                    } else {
+                      const url = system.urlGov || system.urlInternet;
+                      if (url) {
+                        window.location.href = url;
+                      }
+                    }
+                  }}
                 >
                   <div className="relative h-40 overflow-hidden">
                     <img

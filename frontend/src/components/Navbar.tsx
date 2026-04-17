@@ -7,9 +7,10 @@ import Logo from '../assets/Vector.svg';
 
 interface NavbarProps {
   systemName?: string;
+  currentSystem?: string;
 }
 
-export default function Navbar({ systemName = '运营管理系统' }: NavbarProps) {
+export default function Navbar({ systemName = '运营管理系统', currentSystem }: NavbarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -35,6 +36,14 @@ export default function Navbar({ systemName = '运营管理系统' }: NavbarProp
           <Link to="/" className="text-white/90 hover:text-white font-medium transition-colors">
             首页
           </Link>
+          {currentSystem && (
+            <Link
+              to="/service-console"
+              className="text-white font-medium border-b-2 border-blue-500 pb-1"
+            >
+              {currentSystem}
+            </Link>
+          )}
           <Link to="/config" className="text-white/50 hover:text-white font-medium transition-colors">
             配置管理
           </Link>
