@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faCog, faImage, faUsers, faUserShield, faSave, faPlus, faEdit, faTrash, faCheck, faToggleOn, faToggleOff, faExternalLinkAlt, faEye, faTimes
+  faCog, faImage, faUsers, faUserShield, faSave, faPlus, faEdit, faTrash, faCheck, faToggleOn, faToggleOff, faEye, faTimes, faFileAlt
 } from '@fortawesome/free-solid-svg-icons';
-import { getConfig, updateConfig, getSystems, addSystem, updateSystem, deleteSystem, getUsers, getRoles, addUser, updateUser, deleteUser, addRole, updateRole, deleteRole, System, User, Role, SYSTEM_CATEGORIES, SystemType, SystemArea } from '../services/api';
+import { getConfig, updateConfig, getSystems, addSystem, updateSystem, deleteSystem, getUsers, getRoles, addUser, updateUser, deleteUser, addRole, updateRole, deleteRole, getPendingApplications, updateApplication, System, User, Role, Application, SYSTEM_CATEGORIES, SystemType, SystemArea } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
 
-type MenuKey = 'system' | 'logo' | 'users' | 'roles';
+type MenuKey = 'system' | 'logo' | 'users' | 'roles' | 'applications';
 
 export default function Config() {
   const { user } = useAuth();
@@ -48,22 +48,32 @@ export default function Config() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [roleForm, setRoleForm] = useState({ name: '', systemIds: [] as string[] });
 
+  // Applications state
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [applicationTab, setApplicationTab] = useState<'pending' | 'processed'>('pending');
+  const [showProcessModal, setShowProcessModal] = useState(false);
+  const [processingApp, setProcessingApp] = useState<Application | null>(null);
+  const [processNote, setProcessNote] = useState('');
+  const [processStatus, setProcessStatus] = useState<'approved' | 'rejected'>('approved');
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const [configData, systemsData, usersData, rolesData] = await Promise.all([
+    const [configData, systemsData, usersData, rolesData, pendingAppsData] = await Promise.all([
       getConfig(),
       getSystems(),
       getUsers(),
-      getRoles()
+      getRoles(),
+      getPendingApplications()
     ]);
     setSystemName(configData.systemName || '');
     setLogo(configData.logo || '');
     setSystems(systemsData);
     setUsers(usersData);
     setRoles(rolesData);
+    setApplications(pendingAppsData);
     setLoading(false);
   };
 
@@ -204,6 +214,25 @@ export default function Config() {
     }
   };
 
+  // Application handlers
+  const handleProcessApplication = (app: Application) => {
+    setProcessingApp(app);
+    setProcessNote('');
+    setProcessStatus('approved');
+    setShowProcessModal(true);
+  };
+
+  const handleSubmitProcess = async () => {
+    if (!processingApp) return;
+    await updateApplication(processingApp.id, {
+      status: processStatus,
+      processNote
+    });
+    setShowProcessModal(false);
+    setProcessingApp(null);
+    loadData();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -216,6 +245,7 @@ export default function Config() {
   }
 
   const menus = [
+    { key: 'applications' as MenuKey, icon: faFileAlt, label: '运营系统申请' },
     { key: 'system' as MenuKey, icon: faCog, label: '访问系统配置' },
     { key: 'logo' as MenuKey, icon: faImage, label: '系统logo配置' },
     { key: 'users' as MenuKey, icon: faUsers, label: '用户管理' },
@@ -225,7 +255,7 @@ export default function Config() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
-      <div className="flex min-h-[calc(100vh-72px)]">
+      <div className="flex min-h-[calc(100vh-56px)]">
         {/* Left Sidebar */}
         <aside className="w-48 bg-white border-r border-slate-200 py-6 flex-shrink-0">
           <div className="px-4 mb-4">
@@ -817,6 +847,127 @@ export default function Config() {
               </div>
             </div>
           )}
+
+          {/* Applications Management */}
+          {activeMenu === 'applications' && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-slate-800">运营系统申请</h3>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex items-center gap-4 mb-6 border-b border-slate-200">
+                <button
+                  onClick={() => setApplicationTab('pending')}
+                  className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                    applicationTab === 'pending'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  待处理 ({applications.filter(a => a.status === 'pending').length})
+                </button>
+                <button
+                  onClick={() => setApplicationTab('processed')}
+                  className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                    applicationTab === 'processed'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  已处理 ({applications.filter(a => a.status !== 'pending').length})
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px]">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">申请人</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">申请系统</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">申请原因</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">申请时间</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {applicationTab === 'pending' ? (
+                      applications.filter(a => a.status === 'pending').length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-12 text-center">
+                            <FontAwesomeIcon icon={faFileAlt} className="text-slate-300 text-3xl mb-3" />
+                            <p className="text-slate-500">暂无待处理的申请</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        applications.filter(a => a.status === 'pending').map(app => (
+                          <tr key={app.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-4">
+                              <span className="font-medium text-slate-800">{app.username}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="text-slate-600">{app.systemName}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="text-slate-500 text-sm max-w-xs truncate">{app.reason}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="text-slate-400 text-sm">
+                                {new Date(app.applyTime).toLocaleString('zh-CN')}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleProcessApplication(app)}
+                                  className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                                >
+                                  处理
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )
+                    ) : (
+                      applications.filter(a => a.status !== 'pending').length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-12 text-center">
+                            <FontAwesomeIcon icon={faFileAlt} className="text-slate-300 text-3xl mb-3" />
+                            <p className="text-slate-500">暂无已处理的申请</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        applications.filter(a => a.status !== 'pending').map(app => (
+                          <tr key={app.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-4">
+                              <span className="font-medium text-slate-800">{app.username}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="text-slate-600">{app.systemName}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="text-slate-500 text-sm max-w-xs truncate">{app.reason}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className={`text-sm ${app.status === 'approved' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {app.status === 'approved' ? '已通过' : '已拒绝'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 text-right">
+                              <span className="text-slate-400 text-sm">
+                                {app.processTime ? new Date(app.processTime).toLocaleString('zh-CN') : '-'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -892,6 +1043,96 @@ export default function Config() {
                 className="px-4 py-2 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-all text-sm"
               >
                 关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Process Application Modal */}
+      {showProcessModal && processingApp && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowProcessModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-800">处理申请</h3>
+              <button
+                onClick={() => setShowProcessModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              >
+                <FontAwesomeIcon icon={faTimes} className="text-sm" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-slate-500">申请人：</span>
+                    <span className="text-slate-800 font-medium">{processingApp.username}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">申请系统：</span>
+                    <span className="text-slate-800 font-medium">{processingApp.systemName}</span>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <span className="text-slate-500 text-sm">申请原因：</span>
+                  <p className="text-slate-800 text-sm mt-1">{processingApp.reason}</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">处理结果</label>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setProcessStatus('approved')}
+                    className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${
+                      processStatus === 'approved'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faCheck} className="mr-1" />
+                    已通过
+                  </button>
+                  <button
+                    onClick={() => setProcessStatus('rejected')}
+                    className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${
+                      processStatus === 'rejected'
+                        ? 'bg-red-500 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faTimes} className="mr-1" />
+                    未通过
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">处理说明</label>
+                <textarea
+                  value={processNote}
+                  onChange={e => setProcessNote(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                  placeholder="请输入处理说明..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+              <button
+                onClick={() => setShowProcessModal(false)}
+                className="px-4 py-2 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-all text-sm"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSubmitProcess}
+                className={`px-4 py-2 font-medium rounded-lg transition-all text-sm ${
+                  processStatus === 'approved'
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                    : 'bg-red-500 hover:bg-red-600 text-white'
+                }`}
+              >
+                确认{processStatus === 'approved' ? '通过' : '拒绝'}
               </button>
             </div>
           </div>

@@ -26,13 +26,16 @@ export default function Navbar({ systemName = '运营管理系统', currentSyste
   };
 
   return (
-    <nav className="relative z-10 border-b border-white/10 h-[72px] bg-[#030714]">
-      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <nav className="relative z-10 border-b border-white/10 h-14 bg-[#030714]">
+      <div className="h-full flex items-center">
+        {/* Left: Logo and System Name */}
+        <div className="flex items-center gap-3 pl-6 flex-shrink-0">
           <img src={Logo} alt="logo" className="w-8 h-8" />
-          <h1 className="text-xl font-bold text-white tracking-tight">{systemName}</h1>
+          <h1 className="text-xl font-bold text-white tracking-tight">运营管理系统</h1>
         </div>
-        <div className="flex items-center gap-8">
+
+        {/* Center: Menu with 40px gap from logo */}
+        <div className="flex items-center gap-10 ml-10">
           <Link to="/" className="text-white/90 hover:text-white font-medium transition-colors">
             首页
           </Link>
@@ -48,7 +51,12 @@ export default function Navbar({ systemName = '运营管理系统', currentSyste
             配置管理
           </Link>
         </div>
-        <div className="flex items-center gap-4">
+
+        {/* Spacer */}
+        <div className="flex-1"></div>
+
+        {/* Right: User info */}
+        <div className="flex items-center gap-4 pr-6">
           {user ? (
             <div className="relative">
               <button
@@ -58,7 +66,7 @@ export default function Navbar({ systemName = '运营管理系统', currentSyste
                 <div className="w-8 h-8 rounded-full bg-[#0A61FF] flex items-center justify-center">
                   <span className="text-white text-sm font-semibold">{getInitial(user.username)}</span>
                 </div>
-                <span className="text-white font-medium">{user.username}</span>
+                <span className="text-white font-medium hidden sm:block">{user.username}</span>
                 <FontAwesomeIcon icon={faChevronDown} className="text-white/60 text-xs" />
               </button>
 

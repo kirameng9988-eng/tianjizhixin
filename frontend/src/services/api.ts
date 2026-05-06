@@ -52,10 +52,9 @@ export type SystemArea = 'government' | 'internet';
 
 // Tool categories
 export const SYSTEM_CATEGORIES = [
-  { value: 'data_product', label: '数据产品' },
-  { value: 'data_service', label: '数据服务' },
-  { value: 'search', label: '数据寻源' },
-  { value: 'operation', label: '运营管理' },
+  { value: 'integration', label: '数据集成' },
+  { value: 'service', label: '数据服务' },
+  { value: 'agent', label: '智能体' },
   { value: 'other', label: '其他' },
 ] as const;
 
@@ -153,4 +152,58 @@ export async function getAccessibleSystems(roleId: string): Promise<System[]> {
   const role = roles.find((r: Role) => r.id === roleId);
   if (!role) return [];
   return systems.filter((s: System) => role.systemIds.includes(s.id));
+}
+
+// Application Management
+export interface Application {
+  id: string;
+  systemId: string;
+  userId: string;
+  username: string;
+  systemName: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  applyTime: string;
+  processTime?: string;
+  processNote?: string;
+}
+
+export async function getApplications(userId?: string, role?: string) {
+  const params = new URLSearchParams();
+  if (userId) params.append('userId', userId);
+  if (role) params.append('role', role);
+  const res = await fetch(`${API_BASE}/applications?${params}`);
+  return res.json();
+}
+
+export async function getPendingApplications() {
+  const res = await fetch(`${API_BASE}/applications/pending`);
+  return res.json();
+}
+
+export async function createApplication(data: {
+  systemId: string;
+  userId: string;
+  username: string;
+  systemName: string;
+  reason: string;
+}) {
+  const res = await fetch(`${API_BASE}/applications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+export async function updateApplication(id: string, data: {
+  status: 'approved' | 'rejected' | 'completed';
+  processNote?: string;
+}) {
+  const res = await fetch(`${API_BASE}/applications/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
 }

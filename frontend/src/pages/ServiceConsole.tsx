@@ -25,11 +25,11 @@ export default function ServiceConsole() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar systemName={systemName} currentSystem={systemName} />
-      <div className="flex min-h-[calc(100vh-72px)]">
+      <div className="flex min-h-[calc(100vh-56px)]">
         {/* Left Sidebar */}
         <aside className="w-56 bg-white border-r border-slate-200 py-6 flex-shrink-0">
           <div className="px-4 mb-4">
-            <h2 className="text-lg font-semibold text-slate-800">控制台</h2>
+            <h2 className="text-lg font-semibold text-slate-800">数据服务管理</h2>
           </div>
           <nav className="space-y-1">
             {menuItems.map(item => (

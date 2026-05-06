@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1776666734275",
+    "systemId": "1",
+    "userId": "1",
+    "username": "admin",
+    "systemName": "自营数据产品系统",
+    "reason": "我需要使用",
+    "status": "approved",
+    "applyTime": "2026-04-20T06:32:14.275Z",
+    "processNote": "开通",
+    "processTime": "2026-04-20T06:32:33.089Z"
+  },
+  {
+    "id": "1778032655828",
+    "systemId": "2",
+    "userId": "1",
+    "username": "admin",
+    "systemName": "自营数据服务系统",
+    "reason": "申请使用",
+    "status": "approved",
+    "applyTime": "2026-05-06T01:57:35.828Z",
+    "processNote": "它4t",
+    "processTime": "2026-05-06T01:57:55.084Z"
+  }
+]
