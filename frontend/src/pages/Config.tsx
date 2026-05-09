@@ -6,11 +6,13 @@ import {
 import { getConfig, updateConfig, getSystems, addSystem, updateSystem, deleteSystem, getUsers, getRoles, addUser, updateUser, deleteUser, addRole, updateRole, deleteRole, getPendingApplications, updateApplication, System, User, Role, Application, SYSTEM_CATEGORIES, SystemType, SystemArea } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
+import { useProductSwitcher } from '../components/ProductSwitcher';
 
 type MenuKey = 'system' | 'logo' | 'users' | 'roles' | 'applications';
 
 export default function Config() {
   const { user } = useAuth();
+  const { openDrawer } = useProductSwitcher();
   const [activeMenu, setActiveMenu] = useState<MenuKey>('system');
   const [systemName, setSystemName] = useState('');
   const [logo, setLogo] = useState('');
@@ -254,7 +256,7 @@ export default function Config() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar />
+      <Navbar onMenuClick={openDrawer} />
       <div className="flex min-h-[calc(100vh-56px)]">
         {/* Left Sidebar */}
         <aside className="w-48 bg-white border-r border-slate-200 py-6 flex-shrink-0">

@@ -4,11 +4,13 @@ import { faStore, faFileAlt, faCheck, faTimes, faClock, faPaperPlane } from '@fo
 import { getSystems, getApplications, createApplication, Application, System, SYSTEM_CATEGORIES } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
+import { useProductSwitcher } from '../components/ProductSwitcher';
 
 type TabKey = 'all' | 'myApplications';
 
 export default function AppMarketplace() {
   const { user } = useAuth();
+  const { openDrawer } = useProductSwitcher();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [systems, setSystems] = useState<System[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -111,7 +113,7 @@ export default function AppMarketplace() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <Navbar />
+        <Navbar onMenuClick={openDrawer} />
         <div className="flex items-center justify-center h-[calc(100vh-56px)]">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
@@ -124,7 +126,7 @@ export default function AppMarketplace() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar />
+      <Navbar onMenuClick={openDrawer} />
       <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-6 bg-white rounded-xl p-1 shadow-sm border border-slate-200 w-fit">

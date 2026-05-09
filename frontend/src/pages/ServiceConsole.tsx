@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faServer, faBoxes } from '@fortawesome/free-solid-svg-icons';
 import Navbar from '../components/Navbar';
+import { useProductSwitcher } from '../components/ProductSwitcher';
 
 const menuItems = [
   { key: 'tech-service', label: '数据技术服务', icon: faServer, path: '/service-console/tech-service' },
@@ -12,6 +13,7 @@ const menuItems = [
 export default function ServiceConsole() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { openDrawer } = useProductSwitcher();
   const [systemName] = useState(() => {
     if (location.state?.systemName) {
       sessionStorage.setItem('currentSystemName', location.state.systemName);
@@ -24,7 +26,7 @@ export default function ServiceConsole() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar systemName={systemName} currentSystem={systemName} />
+      <Navbar systemName={systemName} currentSystem={systemName} onMenuClick={openDrawer} />
       <div className="flex min-h-[calc(100vh-56px)]">
         {/* Left Sidebar */}
         <aside className="w-56 bg-white border-r border-slate-200 py-6 flex-shrink-0">

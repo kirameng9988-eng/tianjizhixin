@@ -5,10 +5,12 @@ import { faRocket, faCog, faChartLine, faDatabase, faSearch, faCube, faArrowRigh
 import { getSystems, getConfig, getRoles, getApplications, System, Role, Application } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
+import { useProductSwitcher } from '../components/ProductSwitcher';
 
 function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { openDrawer, closeDrawer, isOpen } = useProductSwitcher();
   const [systems, setSystems] = useState<System[]>([]);
   const [systemName, setSystemName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -143,7 +145,7 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-sky-100 to-slate-50">
-      <Navbar systemName={systemName} />
+      <Navbar systemName={systemName} onMenuClick={openDrawer} />
 
       <section className="pt-14 pb-12 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -188,7 +190,6 @@ function Home() {
                 </div>
               </div>
             </div>
-            <span className="text-slate-500 text-sm ml-4">{displayedSystems.length} 个系统已启用</span>
           </div>
 
           {/* Category Tabs */}
