@@ -57,40 +57,36 @@ export default function Navbar({ systemName = '运营管理系统', currentSyste
           <h1 className="text-xl font-bold text-white tracking-tight">运营管理系统</h1>
         </div>
 
-        {/* Center: Menu with 40px gap from logo */}
-        <div className="flex items-center gap-10 ml-10">
+        {/* Center: Menu */}
+        <div className="flex items-center gap-8 ml-12">
           <Link to="/" className="text-white/90 hover:text-white font-medium transition-colors">
             首页
           </Link>
           {currentSystem && (
-            <Link
-              to="/service-console"
-              className="text-white font-medium border-b-2 border-blue-500 pb-1"
-            >
-              {currentSystem}
-            </Link>
+            <span className="text-white font-medium">
+              数据服务系统
+            </span>
           )}
-          <Link to="/config" className="text-white/50 hover:text-white font-medium transition-colors">
-            配置管理
-          </Link>
         </div>
 
         {/* Spacer */}
         <div className="flex-1"></div>
 
-        {/* Right: User account area */}
+        {/* Right: Config + User account */}
         <div className="flex items-center gap-4 pr-6" ref={dropdownRef}>
+          <Link to="/config" className="text-white/70 hover:text-white font-medium transition-colors">
+            配置管理
+          </Link>
           {user ? (
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 transition-all duration-200"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all"
               >
-                {/* Circular avatar with blue gradient */}
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0A61FF] to-[#0A8AFF] flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0A61FF] to-[#0A8AFF] flex items-center justify-center">
                   <span className="text-white text-sm font-semibold">{getInitial(user.username)}</span>
                 </div>
-                <span className="text-white font-medium hidden sm:block">{user.username}</span>
+                <span className="text-white text-sm font-medium">{user.username}</span>
                 <FontAwesomeIcon
                   icon={faChevronDown}
                   className={`text-white/60 text-xs transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
@@ -99,56 +95,42 @@ export default function Navbar({ systemName = '运营管理系统', currentSyste
 
               {/* Dropdown menu */}
               {dropdownOpen && (
-                <div className="absolute right-4 top-full mt-2 w-80 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden z-50">
-                  {/* Header */}
-                  <div className="px-5 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0A61FF] to-[#0A8AFF] flex items-center justify-center shadow-lg shadow-blue-500/30">
-                        <span className="text-white text-lg font-semibold">{getInitial(user.username)}</span>
+                <div className="absolute right-4 top-full mt-2 w-72 bg-white rounded-xl border border-slate-100 overflow-hidden z-50">
+                  {/* Header - User info horizontal compact */}
+                  <div className="px-4 py-2.5 border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#0A61FF] to-[#0A8AFF] flex items-center justify-center">
+                        <span className="text-white text-xs font-semibold">{getInitial(user.username)}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-slate-800 font-semibold text-base truncate">{user.username}</p>
-                        <p className="text-slate-500 text-sm truncate">{user.email || '用户账号'}</p>
-                      </div>
+                      <span className="text-slate-700 text-sm font-medium">管理账号</span>
+                      <span className="text-slate-400 text-sm">（{user.username}）</span>
                     </div>
                   </div>
 
                   {/* Menu items */}
-                  <div className="py-2">
-                    {/* Enterprise info */}
-                    <div className="px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                          <FontAwesomeIcon icon={faBuilding} className="text-blue-500 text-sm" />
-                        </div>
-                        <div>
-                          <p className="text-slate-700 text-sm font-medium">企业基本信息</p>
-                          <p className="text-slate-400 text-xs">天机智信科技有限公司</p>
-                        </div>
+                  <div className="py-1.5">
+                    <div className="px-4 py-2 hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center">
+                        <FontAwesomeIcon icon={faBuilding} className="text-blue-500 text-xs" />
                       </div>
+                      <span className="text-slate-600 text-sm">企业基本信息</span>
                     </div>
 
-                    {/* Personal info */}
-                    <div className="px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                          <FontAwesomeIcon icon={faUser} className="text-emerald-500 text-sm" />
-                        </div>
-                        <div>
-                          <p className="text-slate-700 text-sm font-medium">个人基本信息</p>
-                          <p className="text-slate-400 text-xs">角色: {user.role || '管理员'}</p>
-                        </div>
+                    <div className="px-4 py-2 hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center">
+                        <FontAwesomeIcon icon={faUser} className="text-emerald-500 text-xs" />
                       </div>
+                      <span className="text-slate-600 text-sm">个人基本信息</span>
                     </div>
                   </div>
 
                   {/* Footer - Logout */}
-                  <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50">
+                  <div className="px-4 py-1.5 border-t border-slate-100 bg-slate-50/50">
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
-                      <FontAwesomeIcon icon={faSignOutAlt} className="text-sm" />
+                      <FontAwesomeIcon icon={faSignOutAlt} className="text-xs" />
                       <span className="text-sm font-medium">退出登录</span>
                     </button>
                   </div>
@@ -158,7 +140,7 @@ export default function Navbar({ systemName = '运营管理系统', currentSyste
           ) : (
             <Link
               to="/login"
-              className="flex items-center gap-2 px-4 py-2 bg-[#0A61FF] hover:bg-[#0A8AFF] rounded-lg text-white transition-all text-sm font-medium shadow-lg shadow-blue-500/20"
+              className="flex items-center gap-2 px-4 py-2 bg-[#0A61FF] hover:bg-[#0A8AFF] rounded-lg text-white transition-all text-sm font-medium"
             >
               登录
             </Link>

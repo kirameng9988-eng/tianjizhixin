@@ -90,10 +90,11 @@ interface ProductSwitcherProps {
 
 const ProductSwitcher: React.FC<ProductSwitcherProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string>('products');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [recentSystems, setRecentSystems] = useState<SystemItem[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -113,14 +114,6 @@ const ProductSwitcher: React.FC<ProductSwitcherProps> = ({ children }) => {
       const favorites = localStorage.getItem(STORAGE_KEY_FAVORITES);
       if (favorites) setFavoriteIds(new Set(JSON.parse(favorites)));
     } catch {}
-  }, []);
-
-  // 监听系统主题变化
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
   // ESC 关闭
@@ -172,13 +165,12 @@ const ProductSwitcher: React.FC<ProductSwitcherProps> = ({ children }) => {
     if (openNewTab) {
       window.open(system.url, '_blank');
     } else {
-      // 实际项目中这里可以触发路由切换
       console.log('切换到系统:', system.name, system.url);
     }
     setIsOpen(false);
   }, [recordRecent]);
 
-  // 模糊搜索过滤
+  // 搜索过滤
   const filteredSystems = useMemo(() => {
     if (!searchQuery.trim()) return ALL_SYSTEMS;
     const query = searchQuery.toLowerCase();
@@ -204,272 +196,180 @@ const ProductSwitcher: React.FC<ProductSwitcherProps> = ({ children }) => {
     return ALL_SYSTEMS.filter(s => favoriteIds.has(s.id));
   }, [favoriteIds]);
 
+  const isFavoritesEmpty = favoriteSystems.length === 0;
+
   return (
     <ProductSwitcherContext.Provider value={{ openDrawer, closeDrawer, isOpen, isDark }}>
       {children}
 
-      {/* 遮罩层 */}
+      {/* 遮罩层 - 仅遮住内容区域，不遮导航栏 */}
       <div
         className={`
-          fixed inset-0 z-50 bg-black/50 backdrop-blur-sm
+          fixed left-0 right-0 bottom-0 z-40 bg-black/40 backdrop-blur-sm
           transition-opacity duration-300
           ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
+        style={{ top: '56px' }}
         onClick={() => setIsOpen(false)}
       />
 
-      {/* 侧边抽屉 */}
+      {/* 下拉面板 - 从导航栏下方展开，左侧抽屉样式 */}
       <div
         className={`
-          fixed top-0 left-0 z-50 h-full
-          w-80 sm:w-96
+          fixed left-0 top-14 z-50 h-[calc(100vh-56px)]
+          w-80 sm:w-96 lg:w-[50vw] xl:w-[66.67vw] bg-white border-r border-slate-200
+          shadow-xl shadow-slate-200/50
           transition-transform duration-300 ease-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          ${isDark
-            ? 'bg-slate-900/95 border-r border-slate-700/50'
-            : 'bg-white/95 border-r border-slate-200/80'
-          }
-          backdrop-blur-xl
-          flex flex-col
-          shadow-2xl
         `}
       >
-        {/* 头部搜索区 */}
-        <div className={`
-          p-4 border-b
-          ${isDark ? 'border-slate-700/50' : 'border-slate-200'}
-        `}>
-          {/* 品牌标识 */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className={`
-              w-10 h-10 rounded-xl flex items-center justify-center
-              bg-gradient-to-br from-blue-500 to-blue-600
-              text-white font-bold text-lg
-              shadow-lg shadow-blue-500/30
-            `}>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-            <div>
-              <h2 className={`font-semibold text-base ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                产品中心
-              </h2>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                统一入口 · 快速切换
-              </p>
-            </div>
-            {/* 主题切换 */}
-            <button
-              onClick={() => setIsDark(!isDark)}
-              className={`
-                ml-auto p-2 rounded-lg transition-colors
-                ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}
-              `}
-            >
-              {isDark ? '🌙' : '☀️'}
-            </button>
-          </div>
-
-          {/* 搜索框 */}
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="搜索系统名称..."
-              className={`
-                w-full h-11 pl-11 pr-4 rounded-xl
-                text-sm transition-all duration-200
-                ${isDark
-                  ? 'bg-slate-800/80 text-white placeholder-slate-500 border border-slate-700 focus:border-blue-500'
-                  : 'bg-slate-100/80 text-slate-800 placeholder-slate-400 border border-slate-200 focus:border-blue-500'
-                }
-                focus:outline-none focus:ring-2 focus:ring-blue-500/30
-              `}
-            />
-            <svg
-              className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}
-              >
-                <svg className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <div className="flex h-full">
+          {/* 左侧菜单 */}
+          <div className="w-56 border-r border-slate-100 bg-slate-50/50 flex flex-col">
+            {/* 搜索框 */}
+            <div className="p-4 border-b border-slate-100">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="搜索产品..."
+                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-              </button>
-            )}
-          </div>
-
-          {/* Tab切换 */}
-          <div className={`flex gap-2 mt-3`}>
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`
-                px-4 py-2 rounded-lg text-sm font-medium transition-all
-                ${activeTab === 'all'
-                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                  : isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
-                }
-              `}
-            >
-              全部产品
-            </button>
-            <button
-              onClick={() => setActiveTab('favorites')}
-              className={`
-                px-4 py-2 rounded-lg text-sm font-medium transition-all
-                flex items-center gap-1.5
-                ${activeTab === 'favorites'
-                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                  : isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
-                }
-              `}
-            >
-              <span>⭐</span>
-              <span>我的收藏</span>
-              {favoriteIds.size > 0 && (
-                <span className={`
-                  ml-1 px-1.5 py-0.5 rounded text-xs
-                  ${activeTab === 'favorites' ? 'bg-blue-400' : isDark ? 'bg-slate-700' : 'bg-slate-200'}
-                `}>
-                  {favoriteIds.size}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* 内容区 */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* 最近访问 */}
-          {!searchQuery && activeTab === 'all' && recentSystems.length > 0 && (
-            <section>
-              <h3 className={`
-                text-xs font-semibold uppercase tracking-wider mb-3
-                ${isDark ? 'text-slate-500' : 'text-slate-400'}
-              `}>
-                最近访问
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {recentSystems.map(system => (
-                  <SystemCard
-                    key={system.id}
-                    system={system}
-                    isDark={isDark}
-                    isFavorite={favoriteIds.has(system.id)}
-                    onAccess={handleAccess}
-                    onToggleFavorite={toggleFavorite}
-                    compact
-                  />
-                ))}
               </div>
-            </section>
-          )}
+            </div>
 
-          {/* 收藏区 */}
-          {activeTab === 'favorites' && (
-            <section>
-              <h3 className={`
-                text-xs font-semibold uppercase tracking-wider mb-3
-                ${isDark ? 'text-slate-500' : 'text-slate-400'}
-              `}>
-                我的收藏 ({favoriteSystems.length})
-              </h3>
-              {favoriteSystems.length === 0 ? (
-                <div className={`
-                  py-8 text-center rounded-xl
-                  ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}
-                `}>
-                  <div className="text-3xl mb-2">⭐</div>
-                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    暂无收藏，快去添加吧
-                  </p>
+            {/* 标签切换 */}
+            <div className="p-2 border-b border-slate-100">
+              <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => { setActiveMenu('products'); setActiveCategory('all'); }}
+                  className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                    activeMenu === 'products'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  产品与服务
+                </button>
+                <button
+                  onClick={() => setActiveMenu('favorites')}
+                  className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                    activeMenu === 'favorites'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <span>⭐</span>
+                  <span>收藏</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 分类菜单 */}
+            <div className="flex-1 overflow-y-auto p-2">
+              {activeMenu === 'products' && (
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setActiveCategory('all')}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                      activeCategory === 'all'
+                        ? 'bg-blue-50 text-blue-600 font-medium'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    全部产品
+                  </button>
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                        activeCategory === cat.id
+                          ? 'bg-blue-50 text-blue-600 font-medium'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>{cat.icon}</span>
+                      <span>{cat.name}</span>
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {favoriteSystems.map(system => (
+              )}
+
+              {activeMenu === 'favorites' && (
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setActiveCategory('all')}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                      activeCategory === 'all'
+                        ? 'bg-blue-50 text-blue-600 font-medium'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    全部收藏 ({favoriteIds.size})
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 底部固定区域 - 运营门户 */}
+            <div className="p-3 border-t border-slate-200 bg-slate-50/50">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">运营门户</p>
+              <div className="space-y-1">
+                <button className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2">
+                  <span>📊</span>
+                  <span className="truncate">公共数据授权运营服务平台</span>
+                </button>
+                <button className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2">
+                  <span>🔬</span>
+                  <span className="truncate">数据实验室运营平台</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 右侧内容区 */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* 最近访问 */}
+            {!searchQuery && recentSystems.length > 0 && activeMenu === 'products' && (
+              <div className="mb-6">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">最近访问</h3>
+                <div className="grid grid-cols-4 gap-3">
+                  {recentSystems.map(system => (
                     <SystemCard
                       key={system.id}
                       system={system}
                       isDark={isDark}
-                      isFavorite={true}
+                      isFavorite={favoriteIds.has(system.id)}
                       onAccess={handleAccess}
                       onToggleFavorite={toggleFavorite}
+                      compact
                     />
                   ))}
                 </div>
-              )}
-            </section>
-          )}
+              </div>
+            )}
 
-          {/* 全部分类 */}
-          {activeTab === 'all' && (
-            <section>
-              {searchQuery ? (
-                // 搜索结果
-                <>
-                  <h3 className={`
-                    text-xs font-semibold uppercase tracking-wider mb-3
-                    ${isDark ? 'text-slate-500' : 'text-slate-400'}
-                  `}>
-                    搜索结果 ({filteredSystems.length})
-                  </h3>
-                  {filteredSystems.length === 0 ? (
-                    <div className={`
-                      py-8 text-center rounded-xl
-                      ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}
-                    `}>
-                      <div className="text-3xl mb-2">🔍</div>
-                      <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        未找到匹配的系统
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      {filteredSystems.map(system => (
-                        <SystemCard
-                          key={system.id}
-                          system={system}
-                          isDark={isDark}
-                          isFavorite={favoriteIds.has(system.id)}
-                          onAccess={handleAccess}
-                          onToggleFavorite={toggleFavorite}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                // 分类展示
-                Object.entries(groupedSystems).map(([categoryId, systems]) => {
-                  const category = CATEGORIES.find(c => c.id === categoryId);
-                  if (!category) return null;
-                  return (
-                    <div key={categoryId}>
-                      <h3 className={`
-                        text-xs font-semibold uppercase tracking-wider mb-3
-                        flex items-center gap-2
-                        ${isDark ? 'text-slate-500' : 'text-slate-400'}
-                      `}>
-                        <span>{category.icon}</span>
-                        <span>{category.name}</span>
-                        <span className={`
-                          px-1.5 py-0.5 rounded text-xs
-                          ${isDark ? 'bg-slate-800' : 'bg-slate-200'}
-                        `}>
-                          {systems.length}
-                        </span>
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {systems.map(system => (
+            {/* 产品列表 */}
+            {activeMenu === 'products' && (
+              <div>
+                {searchQuery ? (
+                  <>
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                      搜索结果 ({filteredSystems.length})
+                    </h3>
+                    {filteredSystems.length === 0 ? (
+                      <div className="py-12 text-center">
+                        <div className="text-4xl mb-3">🔍</div>
+                        <p className="text-slate-500">未找到匹配的产品</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-3">
+                        {filteredSystems.map(system => (
                           <SystemCard
                             key={system.id}
                             system={system}
@@ -480,22 +380,82 @@ const ProductSwitcher: React.FC<ProductSwitcherProps> = ({ children }) => {
                           />
                         ))}
                       </div>
+                    )}
+                  </>
+                ) : activeCategory === 'all' ? (
+                  Object.entries(groupedSystems).map(([categoryId, systems]) => {
+                    const category = CATEGORIES.find(c => c.id === categoryId);
+                    if (!category) return null;
+                    return (
+                      <div key={categoryId} className="mb-6">
+                        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                          <span>{category.icon}</span>
+                          <span>{category.name}</span>
+                          <span className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">{systems.length}</span>
+                        </h3>
+                        <div className="grid grid-cols-4 gap-3">
+                          {systems.map(system => (
+                            <SystemCard
+                              key={system.id}
+                              system={system}
+                              isDark={isDark}
+                              isFavorite={favoriteIds.has(system.id)}
+                              onAccess={handleAccess}
+                              onToggleFavorite={toggleFavorite}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <>
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                      {CATEGORIES.find(c => c.id === activeCategory)?.name || activeCategory}
+                    </h3>
+                    <div className="grid grid-cols-4 gap-3">
+                      {(groupedSystems[activeCategory] || []).map(system => (
+                        <SystemCard
+                          key={system.id}
+                          system={system}
+                          isDark={isDark}
+                          isFavorite={favoriteIds.has(system.id)}
+                          onAccess={handleAccess}
+                          onToggleFavorite={toggleFavorite}
+                        />
+                      ))}
                     </div>
-                  );
-                })
-              )}
-            </section>
-          )}
-        </div>
+                  </>
+                )}
+              </div>
+            )}
 
-        {/* 底部 */}
-        <div className={`
-          p-4 border-t text-center
-          ${isDark ? 'border-slate-700/50' : 'border-slate-200'}
-        `}>
-          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            天机智信运营管理系统 · 产品切换器
-          </p>
+            {/* 收藏列表 */}
+            {activeMenu === 'favorites' && (
+              <div>
+                {isFavoritesEmpty ? (
+                  <div className="py-12 text-center">
+                    <div className="text-4xl mb-3">⭐</div>
+                    <p className="text-slate-500">暂无收藏的产品</p>
+                    <p className="text-slate-400 text-sm mt-1">点击产品卡片上的星号添加收藏</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-3">
+                    {favoriteSystems.map(system => (
+                      <SystemCard
+                        key={system.id}
+                        system={system}
+                        isDark={isDark}
+                        isFavorite={true}
+                        onAccess={handleAccess}
+                        onToggleFavorite={toggleFavorite}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </ProductSwitcherContext.Provider>
@@ -532,94 +492,45 @@ const SystemCard: React.FC<SystemCardProps> = ({
         group relative
         p-3 rounded-xl cursor-pointer
         transition-all duration-200
-        ${isDark
-          ? isHovered ? 'bg-slate-800' : 'bg-transparent hover:bg-slate-800/50'
-          : isHovered ? 'bg-slate-100' : 'bg-transparent hover:bg-slate-50'
-        }
-        ${compact ? 'border-b' : isDark ? 'hover:shadow-lg hover:shadow-blue-500/5' : 'hover:shadow-lg hover:shadow-blue-500/10'}
+        bg-white border border-slate-100
+        hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10
+        ${compact ? '' : ''}
       `}
       onClick={() => onAccess(system)}
     >
       <div className="flex items-start gap-3">
         {/* 图标 */}
-        <div
-          className={`
-            w-10 h-10 rounded-xl flex items-center justify-center text-xl
-            transition-all duration-200
-            ${isHovered ? 'scale-110 shadow-lg' : ''}
-            ${isDark
-              ? 'bg-slate-800 group-hover:bg-blue-500/20'
-              : 'bg-slate-100 group-hover:bg-blue-50'
-            }
-          `}
-        >
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-slate-50 group-hover:bg-blue-50 transition-colors">
           {system.icon}
         </div>
 
         {/* 文字 */}
         <div className="flex-1 min-w-0">
-          <h4 className={`
-            font-medium text-sm truncate
-            ${isDark ? 'text-white' : 'text-slate-800'}
-          `}>
-            {system.name}
-          </h4>
+          <h4 className="font-medium text-sm text-slate-700 truncate">{system.name}</h4>
           {!compact && system.description && (
-            <p className={`
-              text-xs truncate mt-0.5
-              ${isDark ? 'text-slate-500' : 'text-slate-400'}
-            `}>
-              {system.description}
-            </p>
+            <p className="text-xs text-slate-400 truncate mt-0.5">{system.description}</p>
           )}
         </div>
       </div>
 
-      {/* 操作按钮（hover显示） */}
-      <div
+      {/* 收藏按钮（hover显示） */}
+      <button
+        onClick={e => {
+          e.stopPropagation();
+          onToggleFavorite(system.id);
+        }}
         className={`
-          absolute top-2 right-2
-          flex items-center gap-1
-          transition-all duration-200
-          ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'}
+          absolute top-2 right-2 p-1.5 rounded-lg transition-all
+          ${isHovered ? 'opacity-100' : 'opacity-0'}
+          ${isFavorite
+            ? 'text-yellow-500 hover:text-yellow-400 bg-yellow-50'
+            : 'text-slate-400 hover:text-slate-600 bg-slate-50'
+          }
         `}
+        title={isFavorite ? '取消收藏' : '添加收藏'}
       >
-        {/* 收藏按钮 */}
-        <button
-          onClick={e => {
-            e.stopPropagation();
-            onToggleFavorite(system.id);
-          }}
-          className={`
-            p-1.5 rounded-lg transition-colors
-            ${isFavorite
-              ? 'text-yellow-500 hover:text-yellow-400'
-              : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
-            }
-            ${isFavorite ? 'bg-yellow-500/10' : isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}
-          `}
-          title={isFavorite ? '取消收藏' : '添加收藏'}
-        >
-          {isFavorite ? '★' : '☆'}
-        </button>
-
-        {/* 新标签打开 */}
-        <button
-          onClick={e => {
-            e.stopPropagation();
-            onAccess(system, true);
-          }}
-          className={`
-            p-1.5 rounded-lg transition-colors
-            ${isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200'}
-          `}
-          title="新标签页打开"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-        </button>
-      </div>
+        {isFavorite ? '★' : '☆'}
+      </button>
     </div>
   );
 };
