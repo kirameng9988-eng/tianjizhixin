@@ -1,28 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRocket, faLock, faUser, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
-import { useAuth } from '../contexts/AuthContext';
+import { faRocket, faLock, faUser } from '@fortawesome/free-solid-svg-icons';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     await new Promise(resolve => setTimeout(resolve, 500));
-    if (login(username, password)) {
-      navigate('/', { replace: true });
-    } else {
-      setError('用户名或密码错误');
-      setLoading(false);
-    }
+    const mockUser = {
+      id: '1',
+      username: username,
+      role: 'admin' as const,
+      roleId: 'admin'
+    };
+    localStorage.setItem('auth_user', JSON.stringify(mockUser));
+    navigate('/', { replace: true });
   };
 
   return (
@@ -37,13 +35,6 @@ export default function Login() {
 
           <h1 className="text-2xl font-bold text-slate-800 mb-1 text-center">天机智信</h1>
           <p className="text-slate-500 text-center mb-8">运营管理系统</p>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 animate-fade-in">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 text-sm" />
-              <span className="text-red-600 text-sm">{error}</span>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -89,12 +80,6 @@ export default function Login() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-            <p className="text-slate-500 text-xs text-center">
-              测试账号：<span className="font-mono text-slate-700">admin/admin123</span> 或 <span className="font-mono text-slate-700">user/user123</span>
-            </p>
-          </div>
         </div>
       </div>
     </div>
